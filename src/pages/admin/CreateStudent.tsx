@@ -30,6 +30,8 @@ export default function CreateStudent() {
   const { toast } = useToast();
 
   const [form, setForm] = useState({ student_id: '', name: '', mobile: '' });
+  const [passwordMode, setPasswordMode] = useState<'auto' | 'custom'>('auto');
+  const [password, setPassword] = useState<string>(generatePassword());
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [createdCredentials, setCreatedCredentials] = useState<{ id: string; password: string } | null>(null);
   const [copied, setCopied] = useState(false);
@@ -49,17 +51,22 @@ export default function CreateStudent() {
       }
     }
 
-    const password = generatePassword();
+    const passwordToUse = passwordMode === 'auto' ? password : password.trim();
+
+    if (passwordMode === 'custom' && passwordToUse.length < 6) {
+      setErrors({ password: 'Password must be at least 6 characters' });
+      return;
+    }
 
     try {
       await createStudent.mutateAsync({
         student_id: form.student_id,
         name: form.name,
         mobile: form.mobile,
-        password,
+        password: passwordToUse,
       });
 
-      setCreatedCredentials({ id: form.student_id, password });
+      setCreatedCredentials({ id: form.student_id, password: passwordToUse });
     } catch (error) {
       // Error handled by mutation
     }
@@ -76,6 +83,8 @@ export default function CreateStudent() {
 
   const handleCreateAnother = () => {
     setForm({ student_id: '', name: '', mobile: '' });
+    setPasswordMode('auto');
+    setPassword(generatePassword());
     setCreatedCredentials(null);
   };
 
@@ -94,8 +103,8 @@ export default function CreateStudent() {
         <main className="container max-w-md py-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-green-600">Success!</CardTitle>
-              <CardDescription>Save these credentials - the password cannot be recovered.</CardDescription>
+              <CardTitle className="text-primary">Success!</CardTitle>
+              <CardDescription>Save these credentials. You can also reset the password later from the Admin panel.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="p-4 bg-muted rounded-lg font-mono text-sm space-y-2">
@@ -135,7 +144,7 @@ export default function CreateStudent() {
           <Card>
             <CardHeader>
               <CardTitle>Student Details</CardTitle>
-              <CardDescription>Enter student information. Password will be auto-generated.</CardDescription>
+              <CardDescription>Create a student login. The password is set now and shown once.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -153,10 +162,55 @@ export default function CreateStudent() {
                 {errors.name && <p className="text-sm text-destructive mt-1">{errors.name}</p>}
               </div>
               <div>
-                <Label>Mobile Number *</Label>
-                <Input value={form.mobile} onChange={e => setForm({...form, mobile: e.target.value})} maxLength={10} placeholder="10-digit number" />
-                {errors.mobile && <p className="text-sm text-destructive mt-1">{errors.mobile}</p>}
+                <div className="flex items-center justify-between gap-3">
+                  <Label>Initial Password *</Label>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={passwordMode === 'auto' ? 'default' : 'outline'}
+                      onClick={() => {
+                        setPasswordMode('auto');
+                        setPassword(generatePassword());
+                        setErrors((e) => ({ ...e, password: '' }));
+                      }}
+                    >
+                      Auto
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={passwordMode === 'custom' ? 'default' : 'outline'}
+                      onClick={() => {
+                        setPasswordMode('custom');
+                        setPassword('');
+                      }}
+                    >
+                      Custom
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="mt-2 flex gap-2">
+                  <Input
+                    type="text"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder={passwordMode === 'custom' ? 'Enter password (min 6 chars)' : ''}
+                    readOnly={passwordMode === 'auto'}
+                  />
+                  {passwordMode === 'auto' && (
+                    <Button type="button" variant="outline" onClick={() => setPassword(generatePassword())}>
+                      Generate
+                    </Button>
+                  )}
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  We set this password in the login system (we do not store it in the database).
+                </p>
+                {errors.password && <p className="text-sm text-destructive mt-1">{errors.password}</p>}
               </div>
+
               <Button type="submit" className="w-full" disabled={createStudent.isPending}>
                 {createStudent.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Create Student
