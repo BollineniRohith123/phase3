@@ -158,8 +158,27 @@ export default function CreateStudent() {
               </div>
               <div>
                 <Label>Full Name *</Label>
-                <Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Enter full name" />
+                <Input
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="Enter full name"
+                />
                 {errors.name && <p className="text-sm text-destructive mt-1">{errors.name}</p>}
+              </div>
+
+              <div>
+                <Label>Mobile *</Label>
+                <Input
+                  value={form.mobile}
+                  onChange={(e) => {
+                    const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
+                    setForm({ ...form, mobile: digitsOnly });
+                  }}
+                  placeholder="10-digit mobile"
+                  inputMode="numeric"
+                  autoComplete="tel"
+                />
+                {errors.mobile && <p className="text-sm text-destructive mt-1">{errors.mobile}</p>}
               </div>
               <div>
                 <div className="flex items-center justify-between gap-3">
