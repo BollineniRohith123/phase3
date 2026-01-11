@@ -6,7 +6,7 @@ import { useAllSales, useApproveSale, useRejectSale } from '@/hooks/useSales';
 import { useStudents } from '@/hooks/useProfiles';
 import { useTicketTiers, useUpdateTicketTier } from '@/hooks/useTicketTiers';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, Users, Package, FileCheck, IndianRupee, Check, X, Plus } from 'lucide-react';
+import { LogOut, Users, Package, FileCheck, IndianRupee, Check, X, Plus, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { useState } from 'react';
@@ -196,11 +196,12 @@ export default function AdminDashboard() {
                         <th className="px-4 py-3 text-left">Mobile</th>
                         <th className="px-4 py-3 text-left">Status</th>
                         <th className="px-4 py-3 text-left">Joined</th>
+                        <th className="px-4 py-3 text-left">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {students.map(student => (
-                        <tr key={student.id} className="border-b">
+                        <tr key={student.id} className="border-b hover:bg-muted/50">
                           <td className="px-4 py-3 font-mono">{student.student_id}</td>
                           <td className="px-4 py-3">{student.name}</td>
                           <td className="px-4 py-3">{student.mobile}</td>
@@ -210,6 +211,15 @@ export default function AdminDashboard() {
                             </Badge>
                           </td>
                           <td className="px-4 py-3">{format(new Date(student.created_at), 'MMM d, yyyy')}</td>
+                          <td className="px-4 py-3">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => navigate(`/admin/student/${student.id}`)}
+                            >
+                              <Eye className="h-4 w-4 mr-1" /> View
+                            </Button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
