@@ -1,4 +1,4 @@
-# Phase 3 Project
+# Phase3 Entertainments
 
 This is a React + TypeScript + Vite project with Tailwind CSS and shadcn/ui components.
 
