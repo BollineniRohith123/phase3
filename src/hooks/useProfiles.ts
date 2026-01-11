@@ -40,48 +40,25 @@ export const useCreateStudent = () => {
       mobile: string;
       password: string;
     }) => {
-      // Create auth user with email format: studentId@student.local
-      const email = `${studentData.student_id.toLowerCase()}@student.local`;
-      
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password: studentData.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            name: studentData.name,
-            student_id: studentData.student_id,
-          },
-        },
-      });
-
-      if (authError) throw authError;
-      if (!authData.user) throw new Error('Failed to create user');
-
-      // Create profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: authData.user.id,
+      const { data, error } = await supabase.functions.invoke('create-student', {
+        body: {
           student_id: studentData.student_id,
           name: studentData.name,
           mobile: studentData.mobile,
-          role: 'student',
-        });
+          password: studentData.password,
+        },
+      });
 
-      if (profileError) throw profileError;
+      if (error) {
+        // Normalize function errors to plain Error for toast rendering
+        throw new Error(error.message);
+      }
 
-      // Add student role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: authData.user.id,
-          role: 'student',
-        });
+      if (!data?.success) {
+        throw new Error(data?.error ?? 'Failed to create student');
+      }
 
-      if (roleError) throw roleError;
-
-      return { user: authData.user, password: studentData.password };
+      return { user_id: data.user_id as string, password: studentData.password };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
