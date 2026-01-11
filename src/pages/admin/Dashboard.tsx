@@ -13,6 +13,7 @@ import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { ScreenshotLink } from '@/components/ScreenshotLink';
 
 export default function AdminDashboard() {
   const { signOut } = useAuth();
@@ -140,9 +141,7 @@ export default function AdminDashboard() {
                                 </Button>
                               </div>
                             )}
-                            {sale.screenshot_url && (
-                              <a href={sale.screenshot_url} target="_blank" className="text-xs text-primary hover:underline">View</a>
-                            )}
+                            <ScreenshotLink screenshotPath={sale.screenshot_url} />
                           </td>
                         </tr>
                       ))}
