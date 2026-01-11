@@ -7,8 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Loader2, Upload } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ArrowLeft, Loader2, Upload, QrCode } from 'lucide-react';
 import { z } from 'zod';
+import paymentQR from '@/assets/payment-qr.png';
 
 const schema = z.object({
   buyer_name: z.string().min(1, 'Buyer name is required'),
@@ -130,7 +132,32 @@ export default function NewSale() {
           </Card>
 
           <Card>
-            <CardHeader><CardTitle className="text-lg">Payment Proof</CardTitle></CardHeader>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">Payment Proof</CardTitle>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <QrCode className="h-4 w-4 mr-2" />
+                      Show QR
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle className="text-center">Scan to Pay</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex flex-col items-center p-4">
+                      <img src={paymentQR} alt="Payment QR Code" className="w-64 h-auto rounded-lg" />
+                      <p className="mt-4 text-lg font-semibold">DURGA PRASAD P</p>
+                      <p className="text-sm text-muted-foreground mt-1">Scan using PhonePe / GPay / Paytm</p>
+                      {totalAmount > 0 && (
+                        <p className="mt-3 text-xl font-bold text-primary">Pay ₹{totalAmount.toLocaleString()}</p>
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardHeader>
             <CardContent className="space-y-4">
               <div>
                 <Label>UTR Last 4 Digits *</Label>
