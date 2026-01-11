@@ -14,6 +14,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { user, profile, loading } = useAuth();
   const location = useLocation();
 
+  // Still loading auth state
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -22,22 +23,22 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
+  // Not authenticated
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (requiredRole && profile?.role !== requiredRole) {
-    // Redirect to appropriate dashboard based on role
-    if (profile?.role === 'admin') {
-      return <Navigate to="/admin" replace />;
-    }
-    if (profile?.role === 'student') {
-      return <Navigate to="/student" replace />;
-    }
-    return <Navigate to="/login" replace />;
+  // User authenticated but profile not yet loaded - wait for it
+  if (!profile) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
-  if (!profile?.is_active) {
+  // Account deactivated
+  if (!profile.is_active) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center">
@@ -46,6 +47,18 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         </div>
       </div>
     );
+  }
+
+  // Check role requirement
+  if (requiredRole && profile.role !== requiredRole) {
+    // Redirect to appropriate dashboard based on actual role
+    if (profile.role === 'admin') {
+      return <Navigate to="/admin" replace />;
+    }
+    if (profile.role === 'student') {
+      return <Navigate to="/student" replace />;
+    }
+    return <Navigate to="/login" replace />;
   }
 
   return <>{children}</>;
