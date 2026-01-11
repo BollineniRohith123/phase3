@@ -49,11 +49,15 @@ export const useCreateStudent = () => {
         },
       });
 
+      // Handle function invocation errors (network, CORS, etc.)
       if (error) {
-        // Normalize function errors to plain Error for toast rendering
-        throw new Error(error.message);
+        // Try to extract error message from the response context
+        const errorBody = error.context?.json ? await error.context.json().catch(() => null) : null;
+        const message = errorBody?.error || error.message || 'Failed to create student';
+        throw new Error(message);
       }
 
+      // Handle application-level errors returned from the edge function
       if (!data?.success) {
         throw new Error(data?.error ?? 'Failed to create student');
       }
