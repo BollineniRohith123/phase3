@@ -10,6 +10,7 @@ import StudentDashboard from "./pages/student/Dashboard";
 import NewSale from "./pages/student/NewSale";
 import AdminDashboard from "./pages/admin/Dashboard";
 import CreateStudent from "./pages/admin/CreateStudent";
+import StudentDetail from "./pages/admin/StudentDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,11 @@ const App = () => (
             <Route path="/admin/create-student" element={
               <ProtectedRoute requiredRole="admin">
                 <CreateStudent />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/student/:studentId" element={
+              <ProtectedRoute requiredRole="admin">
+                <StudentDetail />
               </ProtectedRoute>
             } />
             

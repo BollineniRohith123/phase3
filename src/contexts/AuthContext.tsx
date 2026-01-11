@@ -100,19 +100,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signInWithStudentId = async (studentId: string, password: string) => {
-    // Look up the email for this student ID
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('student_id', studentId)
-      .single();
-
-    if (profileError || !profileData) {
-      return { error: new Error('Invalid student ID') };
-    }
-
-    // Get user email from auth.users (we need to query via a different approach)
-    // Since students login with student_id, we'll use email format: studentId@student.local
+    // Students use email format: studentId@student.local
+    // No need to look up profile first since RLS blocks unauthenticated access
     const email = `${studentId.toLowerCase()}@student.local`;
     
     const { error } = await supabase.auth.signInWithPassword({
@@ -120,7 +109,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       password,
     });
 
-    return { error };
+    if (error) {
+      // Check if it's an invalid credentials error and provide a better message
+      if (error.message.includes('Invalid login credentials')) {
+        return { error: new Error('Invalid student ID or password') };
+      }
+      return { error };
+    }
+
+    return { error: null };
   };
 
   const signOut = async () => {
