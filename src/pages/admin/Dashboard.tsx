@@ -6,7 +6,8 @@ import { useAllSales, useApproveSale, useRejectSale } from '@/hooks/useSales';
 import { useStudents } from '@/hooks/useProfiles';
 import { useTicketTiers, useUpdateTicketTier } from '@/hooks/useTicketTiers';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, Users, Package, FileCheck, IndianRupee, Check, X } from 'lucide-react';
+import { LogOut, Users, Package, FileCheck, IndianRupee, Check, X, Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 
 export default function AdminDashboard() {
   const { signOut } = useAuth();
+  const navigate = useNavigate();
   const { data: sales = [] } = useAllSales();
   const { data: students = [] } = useStudents();
   const { data: tiers = [] } = useTicketTiers();
@@ -178,7 +180,12 @@ export default function AdminDashboard() {
 
           <TabsContent value="students">
             <Card>
-              <CardHeader><CardTitle>Students ({students.length})</CardTitle></CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Students ({students.length})</CardTitle>
+                <Button onClick={() => navigate('/admin/create-student')}>
+                  <Plus className="mr-2 h-4 w-4" /> Add Student
+                </Button>
+              </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
