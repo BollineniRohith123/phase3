@@ -33,12 +33,14 @@ export default function CreateStudent() {
   const [passwordMode, setPasswordMode] = useState<'auto' | 'custom'>('auto');
   const [password, setPassword] = useState<string>(generatePassword());
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitError, setSubmitError] = useState<string>('');
   const [createdCredentials, setCreatedCredentials] = useState<{ id: string; password: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
+    setSubmitError('');
 
     try {
       schema.parse(form);
@@ -68,7 +70,8 @@ export default function CreateStudent() {
 
       setCreatedCredentials({ id: form.student_id, password: passwordToUse });
     } catch (error) {
-      // Error handled by mutation
+      setSubmitError(error instanceof Error ? error.message : 'Failed to create student');
+      // Mutation already shows a toast; we also render the message inline here.
     }
   };
 
@@ -234,6 +237,12 @@ export default function CreateStudent() {
                 {createStudent.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Create Student
               </Button>
+
+              {submitError && (
+                <p className="text-sm text-destructive" role="alert">
+                  {submitError}
+                </p>
+              )}
             </CardContent>
           </Card>
         </form>

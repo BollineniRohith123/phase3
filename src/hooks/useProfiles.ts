@@ -49,15 +49,35 @@ export const useCreateStudent = () => {
         },
       });
 
-      // Handle function invocation errors (network, CORS, etc.)
+      // Handle function invocation errors (network, CORS, non-2xx, etc.)
       if (error) {
-        // Try to extract error message from the response context
-        const errorBody = error.context?.json ? await error.context.json().catch(() => null) : null;
-        const message = errorBody?.error || error.message || 'Failed to create student';
-        throw new Error(message);
+        let message: string | undefined;
+
+        // 1) Preferred: parse JSON body from the Response (when available)
+        const ctx: any = (error as any).context;
+        if (ctx && typeof ctx.json === 'function') {
+          const body = await ctx.json().catch(() => null);
+          message = body?.error;
+        }
+
+        // 2) Fallback: some errors embed a JSON object inside error.message
+        if (!message && typeof (error as any).message === 'string') {
+          const raw = (error as any).message as string;
+          const jsonStart = raw.indexOf('{');
+          if (jsonStart !== -1) {
+            try {
+              const parsed = JSON.parse(raw.slice(jsonStart));
+              message = parsed?.error;
+            } catch {
+              // ignore
+            }
+          }
+        }
+
+        throw new Error(message || (error as any).message || 'Failed to create student');
       }
 
-      // Handle application-level errors returned from the edge function
+      // Handle application-level errors returned from the backend function
       if (!data?.success) {
         throw new Error(data?.error ?? 'Failed to create student');
       }
