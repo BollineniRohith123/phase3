@@ -42,11 +42,8 @@ export const useFileUpload = () => {
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('payment-screenshots')
-        .getPublicUrl(fileName);
-
-      return publicUrl;
+      // Return the file path - signed URLs will be generated when viewing
+      return fileName;
     } catch (error) {
       console.error('Upload error:', error);
       toast({

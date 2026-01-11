@@ -165,28 +165,17 @@ export const useApproveSale = () => {
 
       if (fetchError) throw fetchError;
 
-      // Deduct inventory for each ticket
+      // Deduct inventory atomically for each ticket using RPC
       const ticketsData = (sale.tickets_data as unknown as TicketItem[]) || [];
       for (const ticket of ticketsData) {
-        const { error: updateError } = await supabase
-          .from('ticket_tiers')
-          .update({ remaining_qty: supabase.rpc ? undefined : undefined })
-          .eq('id', ticket.tier_id);
+        const { error: rpcError } = await supabase.rpc('decrement_ticket_qty', {
+          p_tier_id: ticket.tier_id,
+          p_qty: ticket.qty
+        });
         
-        // Use raw update instead
-        await supabase
-          .from('ticket_tiers')
-          .select('remaining_qty')
-          .eq('id', ticket.tier_id)
-          .single()
-          .then(async ({ data: tierData }) => {
-            if (tierData) {
-              await supabase
-                .from('ticket_tiers')
-                .update({ remaining_qty: tierData.remaining_qty - ticket.qty })
-                .eq('id', ticket.tier_id);
-            }
-          });
+        if (rpcError) {
+          throw new Error(`Failed to deduct inventory for ${ticket.tier_name}: ${rpcError.message}`);
+        }
       }
 
       // Update sale status
