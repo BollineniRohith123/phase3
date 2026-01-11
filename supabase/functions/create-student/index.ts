@@ -12,6 +12,17 @@ function jsonResponse(status: number, body: unknown) {
   })
 }
 
+async function findUserByEmail(supabaseAdmin: any, email: string) {
+  const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 })
+  if (error) {
+    console.error('List users error:', error)
+    return null
+  }
+
+  const lower = email.toLowerCase()
+  return data.users.find((u: any) => (u.email ?? '').toLowerCase() === lower) ?? null
+}
+
 function isValidStudentId(value: unknown): value is string {
   return typeof value === 'string' && /^[A-Z0-9]+$/.test(value) && value.length >= 1 && value.length <= 32
 }
@@ -120,10 +131,98 @@ Deno.serve(async (req) => {
     if (createUserError || !createUserData.user) {
       console.error('Create user error:', createUserError)
       const message = createUserError?.message ?? 'Failed to create student auth user'
-      // common duplicate case
+
+      // Common duplicate case: user already exists in the login system.
+      // If the database rows are missing (e.g., someone cleared tables), we "repair" by recreating profile/role.
       if (message.toLowerCase().includes('already') || message.toLowerCase().includes('exists')) {
-        return jsonResponse(409, { error: 'Student already exists (same ID/email).' })
+        const existingUser = await findUserByEmail(supabaseAdmin, email)
+        if (!existingUser) {
+          return jsonResponse(409, { error: 'Student already exists (same ID/email).' })
+        }
+
+        const existingUserId = existingUser.id
+
+        const { data: existingProfile, error: existingProfileError } = await supabaseAdmin
+          .from('profiles')
+          .select('id')
+          .eq('id', existingUserId)
+          .maybeSingle()
+
+        if (existingProfileError) {
+          console.error('Profile lookup error:', existingProfileError)
+          return jsonResponse(500, { error: 'Failed to look up existing student profile: ' + existingProfileError.message })
+        }
+
+        // If profile exists, this is a real duplicate.
+        if (existingProfile) {
+          return jsonResponse(409, {
+            error:
+              'Student already exists (same ID/email). If you need a new password, use Reset Password.',
+          })
+        }
+
+        // Best-effort: ensure the password/metadata matches the admin-provided values
+        const { error: updateUserError } = await supabaseAdmin.auth.admin.updateUserById(existingUserId, {
+          password,
+          user_metadata: {
+            name,
+            student_id,
+          },
+        })
+        if (updateUserError) {
+          console.error('Update existing user error:', updateUserError)
+        }
+
+        const { error: repairedProfileError } = await supabaseAdmin.from('profiles').insert({
+          id: existingUserId,
+          student_id,
+          name,
+          mobile,
+          role: 'student',
+          is_active: true,
+        })
+
+        if (repairedProfileError) {
+          console.error('Repair profile insert error:', repairedProfileError)
+          return jsonResponse(500, { error: 'Failed to repair student profile: ' + repairedProfileError.message })
+        }
+
+        const { data: existingRole, error: roleLookupError } = await supabaseAdmin
+          .from('user_roles')
+          .select('id')
+          .eq('user_id', existingUserId)
+          .eq('role', 'student')
+          .maybeSingle()
+
+        if (roleLookupError) {
+          console.error('Role lookup error:', roleLookupError)
+          await supabaseAdmin.from('profiles').delete().eq('id', existingUserId)
+          return jsonResponse(500, { error: 'Failed to look up student role: ' + roleLookupError.message })
+        }
+
+        if (!existingRole) {
+          const { error: repairedRoleError } = await supabaseAdmin.from('user_roles').insert({
+            user_id: existingUserId,
+            role: 'student',
+          })
+
+          if (repairedRoleError) {
+            console.error('Repair role insert error:', repairedRoleError)
+            await supabaseAdmin.from('profiles').delete().eq('id', existingUserId)
+            return jsonResponse(500, { error: 'Failed to assign student role: ' + repairedRoleError.message })
+          }
+        }
+
+        return jsonResponse(200, {
+          success: true,
+          user_id: existingUserId,
+          email,
+          student_id,
+          name,
+          repaired: true,
+        })
       }
+
       return jsonResponse(500, { error: message })
     }
 
