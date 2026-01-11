@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -28,10 +28,21 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   
-  const { signIn, signInWithStudentId } = useAuth();
+  const { signIn, signInWithStudentId, user, profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && user && profile) {
+      if (profile.role === 'admin') {
+        navigate('/admin', { replace: true });
+      } else if (profile.role === 'student') {
+        navigate('/student', { replace: true });
+      }
+    }
+  }, [user, profile, authLoading, navigate]);
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,8 +74,10 @@ export default function Login() {
       return;
     }
 
-    const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/admin';
-    navigate(from, { replace: true });
+    // Wait a moment for profile to load, then redirect
+    setTimeout(() => {
+      navigate('/admin', { replace: true });
+    }, 500);
   };
 
   const handleStudentLogin = async (e: React.FormEvent) => {
@@ -97,8 +110,20 @@ export default function Login() {
       return;
     }
 
-    navigate('/student', { replace: true });
+    // Wait a moment for profile to load, then redirect
+    setTimeout(() => {
+      navigate('/student', { replace: true });
+    }, 500);
   };
+
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-muted/30">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
