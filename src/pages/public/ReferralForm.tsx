@@ -6,10 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Loader2, Upload, QrCode, CheckCircle, AlertCircle, Ticket } from 'lucide-react';
+import { Loader2, Upload, QrCode, CheckCircle, AlertCircle, Ticket, Plus, Minus, Copy, Check } from 'lucide-react';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import paymentQR from '@/assets/payment-qr.png';
+import phase3Logo from '@/assets/phase3-logo.png';
+import concertBanner from '@/assets/concert-banner.png';
+
+const UPI_ID = '9000125959-2@ybl';
 
 interface TicketTier {
   id: string;
@@ -40,6 +44,7 @@ export default function ReferralForm() {
   const [error, setError] = useState<string | null>(null);
   const [tiers, setTiers] = useState<TicketTier[]>([]);
   const [submitted, setSubmitted] = useState(false);
+  const [upiCopied, setUpiCopied] = useState(false);
   
   const [form, setForm] = useState({ buyer_name: '', buyer_mobile: '', utr_last4: '' });
   const [quantities, setQuantities] = useState<Record<string, number>>({});
@@ -49,6 +54,31 @@ export default function ReferralForm() {
 
   const totalAmount = tiers.reduce((sum, tier) => sum + (quantities[tier.id] || 0) * tier.price, 0);
   const totalTickets = Object.values(quantities).reduce((a, b) => a + b, 0);
+
+  const copyUpiId = async () => {
+    try {
+      await navigator.clipboard.writeText(UPI_ID);
+      setUpiCopied(true);
+      toast({ title: 'UPI ID copied!' });
+      setTimeout(() => setUpiCopied(false), 2000);
+    } catch {
+      toast({ variant: 'destructive', title: 'Failed to copy' });
+    }
+  };
+
+  const incrementQty = (tierId: string, maxQty: number) => {
+    const current = quantities[tierId] || 0;
+    if (current < maxQty) {
+      setQuantities({ ...quantities, [tierId]: current + 1 });
+    }
+  };
+
+  const decrementQty = (tierId: string) => {
+    const current = quantities[tierId] || 0;
+    if (current > 0) {
+      setQuantities({ ...quantities, [tierId]: current - 1 });
+    }
+  };
 
   // Fetch student info and ticket tiers on mount
   useEffect(() => {
@@ -227,7 +257,7 @@ export default function ReferralForm() {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-muted/30 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-red-900/20 to-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -236,7 +266,7 @@ export default function ReferralForm() {
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-b from-red-900/20 to-background flex items-center justify-center p-4">
         <Card className="max-w-md w-full text-center">
           <CardContent className="pt-6">
             <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
@@ -251,9 +281,10 @@ export default function ReferralForm() {
   // Success state
   if (submitted) {
     return (
-      <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-b from-red-900/20 to-background flex items-center justify-center p-4">
         <Card className="max-w-md w-full text-center">
           <CardContent className="pt-6">
+            <img src={phase3Logo} alt="Phase 3" className="h-16 mx-auto mb-4" />
             <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
             <h1 className="text-xl font-bold mb-2">Submission Successful!</h1>
             <p className="text-muted-foreground mb-4">
@@ -270,23 +301,37 @@ export default function ReferralForm() {
 
   // Main form
   return (
-    <div className="min-h-screen bg-muted/30">
-      <header className="border-b bg-background">
-        <div className="container py-4 text-center">
-          <div className="flex items-center justify-center gap-2 mb-1">
-            <Ticket className="h-5 w-5 text-primary" />
-            <h1 className="text-xl font-bold">Buy Event Tickets</h1>
+    <div className="min-h-screen bg-gradient-to-b from-red-900/20 to-background">
+      {/* Header with Logo */}
+      <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
+        <div className="container py-3 flex items-center justify-center gap-3">
+          <img src={phase3Logo} alt="Phase 3 Entertainments" className="h-10 w-auto" />
+          <div className="text-left">
+            <h1 className="text-lg font-bold leading-tight">Ram Miriyala Live</h1>
+            <p className="text-xs text-muted-foreground">
+              Referred by <span className="font-medium text-foreground">{studentName}</span>
+            </p>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Referred by <span className="font-medium text-foreground">{studentName}</span>
-          </p>
         </div>
       </header>
 
-      <main className="container max-w-lg py-6">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <Card>
-            <CardHeader><CardTitle className="text-lg">Your Details</CardTitle></CardHeader>
+      {/* Concert Banner */}
+      <div className="relative">
+        <img 
+          src={concertBanner} 
+          alt="Ram Miriyala Live in Concert" 
+          className="w-full h-48 sm:h-64 object-cover object-top"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
+      </div>
+
+      <main className="container max-w-lg py-6 -mt-8 relative z-10">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Your Details */}
+          <Card className="shadow-lg">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Your Details</CardTitle>
+            </CardHeader>
             <CardContent className="space-y-4">
               <div>
                 <Label>Your Name *</Label>
@@ -294,6 +339,7 @@ export default function ReferralForm() {
                   value={form.buyer_name} 
                   onChange={e => setForm({...form, buyer_name: e.target.value})} 
                   placeholder="Enter your full name"
+                  className="mt-1"
                 />
                 {errors.buyer_name && <p className="text-sm text-destructive mt-1">{errors.buyer_name}</p>}
               </div>
@@ -303,54 +349,106 @@ export default function ReferralForm() {
                   value={form.buyer_mobile} 
                   onChange={e => setForm({...form, buyer_mobile: e.target.value})} 
                   maxLength={10} 
-                  placeholder="10-digit number" 
+                  placeholder="10-digit number"
+                  className="mt-1"
                 />
                 {errors.buyer_mobile && <p className="text-sm text-destructive mt-1">{errors.buyer_mobile}</p>}
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader><CardTitle className="text-lg">Select Tickets</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
+          {/* Select Tickets - Swiggy Style */}
+          <Card className="shadow-lg">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Ticket className="h-5 w-5 text-primary" />
+                Select Tickets
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
               {tiers.length === 0 ? (
                 <p className="text-center text-muted-foreground py-4">No tickets available</p>
               ) : (
-                tiers.map(tier => (
-                  <div key={tier.id} className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{tier.name} - ₹{tier.price}</p>
-                      <p className="text-xs text-muted-foreground">{tier.remaining_qty} available</p>
-                    </div>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={tier.remaining_qty}
-                      value={quantities[tier.id] || 0}
-                      onChange={e => setQuantities({...quantities, [tier.id]: parseInt(e.target.value) || 0})}
-                      className="w-20"
-                    />
-                  </div>
-                ))
+                <div className="space-y-3">
+                  {tiers.map(tier => {
+                    const qty = quantities[tier.id] || 0;
+                    return (
+                      <div 
+                        key={tier.id} 
+                        className="flex items-center justify-between p-3 rounded-lg border bg-card hover:border-primary/50 transition-colors"
+                      >
+                        <div className="flex-1">
+                          <p className="font-semibold text-foreground">{tier.name}</p>
+                          <p className="text-lg font-bold text-primary">₹{tier.price.toLocaleString()}</p>
+                          <p className="text-xs text-muted-foreground">{tier.remaining_qty} left</p>
+                        </div>
+                        
+                        {/* +/- Controls */}
+                        <div className="flex items-center gap-1">
+                          {qty > 0 ? (
+                            <>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                className="h-9 w-9 rounded-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                                onClick={() => decrementQty(tier.id)}
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                              <span className="w-8 text-center font-bold text-lg">{qty}</span>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                className="h-9 w-9 rounded-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                                onClick={() => incrementQty(tier.id, tier.remaining_qty)}
+                                disabled={qty >= tier.remaining_qty}
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="border-primary text-primary hover:bg-primary hover:text-primary-foreground font-semibold px-4"
+                              onClick={() => incrementQty(tier.id, tier.remaining_qty)}
+                            >
+                              ADD
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
               {errors.tickets && <p className="text-sm text-destructive">{errors.tickets}</p>}
-              {tiers.length > 0 && (
-                <div className="pt-2 border-t text-right">
-                  <p className="text-lg font-bold">Total: ₹{totalAmount.toLocaleString()}</p>
+              
+              {/* Total - Only show when tickets selected */}
+              {totalTickets > 0 && (
+                <div className="pt-3 border-t flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">{totalTickets} ticket{totalTickets > 1 ? 's' : ''} selected</p>
+                  </div>
+                  <p className="text-xl font-bold text-primary">₹{totalAmount.toLocaleString()}</p>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
+          {/* Payment Section */}
+          <Card className="shadow-lg">
+            <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">Payment</CardTitle>
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <QrCode className="h-4 w-4 mr-2" />
-                      Show QR
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <QrCode className="h-4 w-4" />
+                      Scan QR
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-md">
@@ -358,11 +456,11 @@ export default function ReferralForm() {
                       <DialogTitle className="text-center">Scan to Pay</DialogTitle>
                     </DialogHeader>
                     <div className="flex flex-col items-center p-4">
-                      <img src={paymentQR} alt="Payment QR Code" className="w-64 h-auto rounded-lg" />
+                      <img src={paymentQR} alt="Payment QR Code" className="w-64 h-auto rounded-lg border" />
                       <p className="mt-4 text-lg font-semibold">DURGA PRASAD P</p>
                       <p className="text-sm text-muted-foreground mt-1">Scan using PhonePe / GPay / Paytm</p>
                       {totalAmount > 0 && (
-                        <p className="mt-3 text-xl font-bold text-primary">Pay ₹{totalAmount.toLocaleString()}</p>
+                        <p className="mt-3 text-2xl font-bold text-primary">Pay ₹{totalAmount.toLocaleString()}</p>
                       )}
                     </div>
                   </DialogContent>
@@ -370,30 +468,54 @@ export default function ReferralForm() {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* UPI ID Copy Section */}
+              <div className="bg-primary/10 rounded-lg p-4">
+                <p className="text-sm font-medium text-muted-foreground mb-2">Or pay directly to UPI ID:</p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 bg-background rounded px-3 py-2 font-mono text-sm border">
+                    {UPI_ID}
+                  </code>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={copyUpiId}
+                    className="shrink-0 gap-2"
+                  >
+                    {upiCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                    {upiCopied ? 'Copied!' : 'Copy'}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Payment Instructions */}
               <div className="bg-muted/50 rounded-lg p-3 text-sm">
-                <p className="font-medium mb-1">How to pay:</p>
+                <p className="font-medium mb-2">How to pay:</p>
                 <ol className="list-decimal list-inside text-muted-foreground space-y-1">
-                  <li>Click "Show QR" to see payment QR code</li>
-                  <li>Pay ₹{totalAmount.toLocaleString()} using any UPI app</li>
+                  <li>Scan QR or copy UPI ID above</li>
+                  {totalAmount > 0 && <li>Pay <span className="font-semibold text-foreground">₹{totalAmount.toLocaleString()}</span></li>}
                   <li>Enter the last 4 digits of UTR below</li>
                   <li>Upload a screenshot of the payment</li>
                 </ol>
               </div>
+
               <div>
                 <Label>UTR Last 4 Digits *</Label>
                 <Input 
                   value={form.utr_last4} 
                   onChange={e => setForm({...form, utr_last4: e.target.value})} 
                   maxLength={4} 
-                  placeholder="1234" 
+                  placeholder="1234"
+                  className="mt-1"
                 />
                 {errors.utr_last4 && <p className="text-sm text-destructive mt-1">{errors.utr_last4}</p>}
               </div>
+
               <div>
                 <Label>Payment Screenshot *</Label>
                 <div className="mt-2">
-                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
-                    <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                  <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 hover:border-primary/50 transition-colors">
+                    <Upload className="h-6 w-6 text-muted-foreground mb-1" />
                     <span className="text-sm text-muted-foreground text-center px-2">
                       {file ? file.name : 'Click to upload (JPG/PNG, max 5MB)'}
                     </span>
@@ -410,12 +532,16 @@ export default function ReferralForm() {
             </CardContent>
           </Card>
 
-          <Button type="submit" className="w-full" disabled={submitting || tiers.length === 0}>
-            {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Submit Purchase
+          <Button 
+            type="submit" 
+            className="w-full h-12 text-lg font-semibold" 
+            disabled={submitting || tiers.length === 0 || totalTickets === 0}
+          >
+            {submitting && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
+            {totalTickets > 0 ? `Pay ₹${totalAmount.toLocaleString()} & Submit` : 'Select Tickets to Continue'}
           </Button>
 
-          <p className="text-xs text-center text-muted-foreground">
+          <p className="text-xs text-center text-muted-foreground pb-4">
             By submitting, you confirm that you have made the payment.
           </p>
         </form>
