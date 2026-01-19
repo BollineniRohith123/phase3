@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { LogOut, Plus, IndianRupee, FileCheck, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
+import { ReferralLinkBanner } from '@/components/ReferralLinkBanner';
 
 export default function StudentDashboard() {
   const { profile, signOut } = useAuth();
@@ -41,6 +42,9 @@ export default function StudentDashboard() {
       </header>
 
       <main className="container py-6 space-y-6">
+        {/* Referral Link Banner */}
+        <ReferralLinkBanner />
+
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">

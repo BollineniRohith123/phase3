@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.create-student]
 verify_jwt = false
+
+[functions.create-public-sale]
+verify_jwt = false
