@@ -18,6 +18,20 @@ const schema = z.object({
   utr_last4: z.string().regex(/^\d{4}$/, 'Enter last 4 digits of UTR'),
 });
 
+// Group discount options for Tier 1
+interface GroupOption {
+  id: string;
+  label: string;
+  totalTickets: number;
+  freeTickets: number;
+  paidTickets: number;
+}
+
+const GROUP_OPTIONS: GroupOption[] = [
+  { id: 'group5', label: '5 Tickets (1 FREE!)', totalTickets: 5, freeTickets: 1, paidTickets: 4 },
+  { id: 'group10', label: '10 Tickets (2 FREE!)', totalTickets: 10, freeTickets: 2, paidTickets: 8 },
+];
+
 export default function NewSale() {
   const navigate = useNavigate();
   const { data: tiers = [] } = useTicketTiers();
@@ -26,11 +40,41 @@ export default function NewSale() {
 
   const [form, setForm] = useState({ buyer_name: '', buyer_mobile: '', utr_last4: '' });
   const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [selectedGroupOption, setSelectedGroupOption] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const totalAmount = tiers.reduce((sum, tier) => sum + (quantities[tier.id] || 0) * tier.price, 0);
-  const totalTickets = Object.values(quantities).reduce((a, b) => a + b, 0);
+  // Filter out Tier 4 (₹1899)
+  const filteredTiers = tiers.filter(tier => tier.price !== 1899);
+  
+  // Get Tier 1 (cheapest tier) for group discounts
+  const tier1 = filteredTiers.length > 0 ? filteredTiers[0] : null;
+
+  // Calculate total amount with group discount
+  const calculateTotal = () => {
+    let amount = 0;
+    let tickets = 0;
+    
+    // Add group option if selected
+    if (selectedGroupOption && tier1) {
+      const option = GROUP_OPTIONS.find(o => o.id === selectedGroupOption);
+      if (option) {
+        amount += option.paidTickets * tier1.price;
+        tickets += option.totalTickets;
+      }
+    }
+    
+    // Add regular tier quantities
+    filteredTiers.forEach(tier => {
+      const qty = quantities[tier.id] || 0;
+      amount += qty * tier.price;
+      tickets += qty;
+    });
+    
+    return { amount, tickets };
+  };
+  
+  const { amount: totalAmount, tickets: totalTickets } = calculateTotal();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,9 +104,27 @@ export default function NewSale() {
     const screenshotUrl = await uploadFile(file);
     if (!screenshotUrl) return;
 
-    const ticketsData: TicketItem[] = tiers
+    const ticketsData: TicketItem[] = [];
+    
+    // Add group option tickets if selected
+    if (selectedGroupOption && tier1) {
+      const option = GROUP_OPTIONS.find(o => o.id === selectedGroupOption);
+      if (option) {
+        ticketsData.push({
+          tier_id: tier1.id,
+          tier_name: `${tier1.name} - ${option.label}`,
+          price: tier1.price,
+          qty: option.totalTickets,
+        });
+      }
+    }
+    
+    // Add regular tier quantities
+    filteredTiers
       .filter(t => quantities[t.id] > 0)
-      .map(t => ({ tier_id: t.id, tier_name: t.name, price: t.price, qty: quantities[t.id] }));
+      .forEach(t => {
+        ticketsData.push({ tier_id: t.id, tier_name: t.name, price: t.price, qty: quantities[t.id] });
+      });
 
     await createSale.mutateAsync({
       buyer_name: form.buyer_name,
@@ -108,7 +170,43 @@ export default function NewSale() {
           <Card>
             <CardHeader><CardTitle className="text-lg">Select Tickets</CardTitle></CardHeader>
             <CardContent className="space-y-3">
-              {tiers.map(tier => (
+              {/* Group Discount Options for Tier 1 */}
+              {tier1 && tier1.remaining_qty >= 5 && (
+                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 mb-4">
+                  <p className="font-bold text-sm text-green-700 dark:text-green-400 mb-2">
+                    🎉 Group Discount on {tier1.name}!
+                  </p>
+                  <div className="space-y-2">
+                    {GROUP_OPTIONS.map(option => {
+                      if (tier1.remaining_qty < option.totalTickets) return null;
+                      const isSelected = selectedGroupOption === option.id;
+                      const discountedPrice = option.paidTickets * tier1.price;
+                      const originalPrice = option.totalTickets * tier1.price;
+                      
+                      return (
+                        <div
+                          key={option.id}
+                          onClick={() => setSelectedGroupOption(isSelected ? null : option.id)}
+                          className={`flex items-center justify-between p-2 rounded-lg border cursor-pointer transition-all ${
+                            isSelected ? 'border-green-500 bg-green-500/10' : 'border-border hover:border-green-500/50'
+                          }`}
+                        >
+                          <div>
+                            <p className="font-medium text-sm">{option.label}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Pay ₹{discountedPrice.toLocaleString()} <span className="line-through">₹{originalPrice.toLocaleString()}</span>
+                            </p>
+                          </div>
+                          <input type="checkbox" checked={isSelected} readOnly className="h-4 w-4" />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Regular Tiers */}
+              {filteredTiers.map(tier => (
                 <div key={tier.id} className="flex items-center justify-between">
                   <div>
                     <p className="font-medium">{tier.name} - ₹{tier.price}</p>
