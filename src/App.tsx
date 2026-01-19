@@ -8,9 +8,11 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Login from "./pages/Login";
 import StudentDashboard from "./pages/student/Dashboard";
 import NewSale from "./pages/student/NewSale";
+import MyReferralLink from "./pages/student/MyReferralLink";
 import AdminDashboard from "./pages/admin/Dashboard";
 import CreateStudent from "./pages/admin/CreateStudent";
 import StudentDetail from "./pages/admin/StudentDetail";
+import ReferralForm from "./pages/public/ReferralForm";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +28,9 @@ const App = () => (
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<Login />} />
             
+            {/* Public Referral Route - No auth required */}
+            <Route path="/ref/:studentCode" element={<ReferralForm />} />
+            
             {/* Student Routes */}
             <Route path="/student" element={
               <ProtectedRoute requiredRole="student">
@@ -35,6 +40,11 @@ const App = () => (
             <Route path="/student/new-sale" element={
               <ProtectedRoute requiredRole="student">
                 <NewSale />
+              </ProtectedRoute>
+            } />
+            <Route path="/student/my-link" element={
+              <ProtectedRoute requiredRole="student">
+                <MyReferralLink />
               </ProtectedRoute>
             } />
             
