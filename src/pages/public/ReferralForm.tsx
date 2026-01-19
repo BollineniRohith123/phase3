@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Loader2, Upload, QrCode, CheckCircle, AlertCircle, Ticket, Plus, Minus, Copy, Check, Flame, TrendingUp } from 'lucide-react';
+import { Loader2, Upload, QrCode, CheckCircle, AlertCircle, Ticket, Plus, Minus, Copy, Check, Flame, TrendingUp, Clock, Instagram, Play } from 'lucide-react';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import paymentQR from '@/assets/payment-qr.png';
@@ -14,6 +14,10 @@ import phase3Logo from '@/assets/phase3-logo.png';
 import concertBanner from '@/assets/concert-banner.png';
 
 const UPI_ID = '9000125959-2@ybl';
+const INSTAGRAM_REEL_URL = 'https://www.instagram.com/itsmytirupati/reel/DTozKJvkvIk/';
+
+// Concert date - February 7, 2026
+const CONCERT_DATE = new Date('2026-02-07T18:00:00');
 
 interface TicketTier {
   id: string;
@@ -29,43 +33,60 @@ interface TicketItem {
   qty: number;
 }
 
+interface TimeLeft {
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+}
+
 const schema = z.object({
   buyer_name: z.string().min(1, 'Your name is required'),
   buyer_mobile: z.string().regex(/^\d{10}$/, 'Enter valid 10-digit mobile'),
   utr_last4: z.string().regex(/^\d{4}$/, 'Enter last 4 digits of UTR'),
 });
 
-// Generate a consistent "tickets booked today" count that only increases throughout the day
-// Same number for all users at the same time, resets daily
+// Generate consistent "tickets booked today" count
 const getTodayTicketCount = (): number => {
   const now = new Date();
   const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
   const hour = now.getHours();
   const minute = now.getMinutes();
   
-  // Base seed from day (ensures different pattern each day)
-  const daySeed = (dayOfYear * 7) % 20 + 15; // 15-35 base
+  const daySeed = (dayOfYear * 7) % 20 + 15;
   
-  // Increase throughout the day (more during peak hours 10AM-10PM)
   let hourlyIncrease = 0;
   for (let h = 0; h <= hour; h++) {
     if (h >= 10 && h <= 22) {
-      // Peak hours: 3-6 tickets per hour
       hourlyIncrease += 3 + (h % 4);
     } else if (h >= 7 && h < 10) {
-      // Morning: 1-2 tickets per hour
       hourlyIncrease += 1 + (h % 2);
     } else {
-      // Night: 0-1 tickets
       hourlyIncrease += h % 2;
     }
   }
   
-  // Add some based on current 15-min block (so it updates every 15 mins)
   const quarterHour = Math.floor(minute / 15);
   const minuteBonus = quarterHour * (hour >= 10 && hour <= 22 ? 2 : 1);
   
   return daySeed + hourlyIncrease + minuteBonus;
+};
+
+// Calculate time left until concert
+const getTimeLeft = (): TimeLeft => {
+  const now = new Date();
+  const difference = CONCERT_DATE.getTime() - now.getTime();
+  
+  if (difference <= 0) {
+    return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+  }
+  
+  return {
+    days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+    hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+    minutes: Math.floor((difference / (1000 * 60)) % 60),
+    seconds: Math.floor((difference / 1000) % 60),
+  };
 };
 
 export default function ReferralForm() {
@@ -79,6 +100,7 @@ export default function ReferralForm() {
   const [submitted, setSubmitted] = useState(false);
   const [upiCopied, setUpiCopied] = useState(false);
   const [todayCount, setTodayCount] = useState(getTodayTicketCount());
+  const [timeLeft, setTimeLeft] = useState<TimeLeft>(getTimeLeft());
   
   const [form, setForm] = useState({ buyer_name: '', buyer_mobile: '', utr_last4: '' });
   const [quantities, setQuantities] = useState<Record<string, number>>({});
@@ -89,11 +111,19 @@ export default function ReferralForm() {
   const totalAmount = tiers.reduce((sum, tier) => sum + (quantities[tier.id] || 0) * tier.price, 0);
   const totalTickets = Object.values(quantities).reduce((a, b) => a + b, 0);
 
-  // Update counter every 15 minutes
+  // Update countdown every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(getTimeLeft());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Update ticket counter
   useEffect(() => {
     const interval = setInterval(() => {
       setTodayCount(getTodayTicketCount());
-    }, 60000); // Check every minute
+    }, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -122,7 +152,6 @@ export default function ReferralForm() {
     }
   };
 
-  // Fetch student info and ticket tiers on mount
   useEffect(() => {
     async function fetchData() {
       if (!studentCode) {
@@ -302,16 +331,25 @@ export default function ReferralForm() {
             <p className="text-muted-foreground mb-4">
               Your ticket request has been submitted successfully. {studentName} will verify your payment and confirm.
             </p>
-            <p className="text-sm text-muted-foreground">
-              You'll receive confirmation soon. You can close this page.
+            <p className="text-sm text-muted-foreground mb-6">
+              You'll receive confirmation soon.
             </p>
+            <a 
+              href={INSTAGRAM_REEL_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-primary hover:underline text-sm"
+            >
+              <Instagram className="h-4 w-4" />
+              Follow us on Instagram
+            </a>
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  // Main form - Mobile optimized
+  // Main form
   return (
     <div className="min-h-screen bg-gradient-to-b from-red-900/30 to-background pb-6">
       {/* Sticky Header */}
@@ -336,10 +374,10 @@ export default function ReferralForm() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
         
-        {/* Live Counter Badge - Positioned on banner */}
+        {/* Live Counter Badge */}
         <div className="absolute bottom-3 left-3 right-3">
-          <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg px-3 py-2 flex items-center gap-2 shadow-lg animate-pulse">
-            <Flame className="h-4 w-4 shrink-0" />
+          <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg px-3 py-2 flex items-center gap-2 shadow-lg">
+            <Flame className="h-4 w-4 shrink-0 animate-pulse" />
             <span className="text-sm font-semibold">
               🔥 {todayCount} tickets booked today!
             </span>
@@ -349,6 +387,58 @@ export default function ReferralForm() {
       </div>
 
       <main className="px-4 pt-4 max-w-lg mx-auto space-y-4">
+        {/* Countdown Timer */}
+        <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl p-4 text-white shadow-lg">
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <Clock className="h-5 w-5" />
+            <span className="font-semibold">Concert Starts In</span>
+          </div>
+          <div className="grid grid-cols-4 gap-2 text-center">
+            <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2">
+              <div className="text-2xl sm:text-3xl font-bold">{timeLeft.days}</div>
+              <div className="text-xs uppercase tracking-wide opacity-90">Days</div>
+            </div>
+            <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2">
+              <div className="text-2xl sm:text-3xl font-bold">{timeLeft.hours.toString().padStart(2, '0')}</div>
+              <div className="text-xs uppercase tracking-wide opacity-90">Hours</div>
+            </div>
+            <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2">
+              <div className="text-2xl sm:text-3xl font-bold">{timeLeft.minutes.toString().padStart(2, '0')}</div>
+              <div className="text-xs uppercase tracking-wide opacity-90">Mins</div>
+            </div>
+            <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2">
+              <div className="text-2xl sm:text-3xl font-bold">{timeLeft.seconds.toString().padStart(2, '0')}</div>
+              <div className="text-xs uppercase tracking-wide opacity-90">Secs</div>
+            </div>
+          </div>
+          <p className="text-center text-xs mt-3 opacity-90">
+            📍 MG Indoor Sports Hub, Tirupati • Feb 7, 2026
+          </p>
+        </div>
+
+        {/* Instagram Video Link */}
+        <a 
+          href={INSTAGRAM_REEL_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block"
+        >
+          <div className="bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 p-[2px] rounded-xl">
+            <div className="bg-background rounded-xl p-3 flex items-center gap-3 hover:bg-muted/50 transition-colors">
+              <div className="bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 rounded-full p-2.5 shrink-0">
+                <Instagram className="h-5 w-5 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm">Watch Ram Miriyala's Message</p>
+                <p className="text-xs text-muted-foreground truncate">Special announcement for Tirupati concert! 🎤</p>
+              </div>
+              <div className="bg-primary/10 rounded-full p-2 shrink-0">
+                <Play className="h-4 w-4 text-primary fill-primary" />
+              </div>
+            </div>
+          </div>
+        </a>
+
         {/* Urgency Banner */}
         <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 flex items-center gap-2">
           <span className="text-lg">⚡</span>
@@ -418,7 +508,6 @@ export default function ReferralForm() {
                           <p className="text-xs text-muted-foreground">Only {tier.remaining_qty} left</p>
                         </div>
                         
-                        {/* +/- Controls - Large touch targets */}
                         <div className="flex items-center gap-0.5 ml-2">
                           {qty > 0 ? (
                             <>
@@ -462,7 +551,6 @@ export default function ReferralForm() {
               )}
               {errors.tickets && <p className="text-xs text-destructive mt-2">{errors.tickets}</p>}
               
-              {/* Total */}
               {totalTickets > 0 && (
                 <div className="mt-4 pt-3 border-t flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">{totalTickets} ticket{totalTickets > 1 ? 's' : ''}</p>
@@ -576,7 +664,7 @@ export default function ReferralForm() {
             </CardContent>
           </Card>
 
-          {/* Submit Button - Fixed at bottom on mobile */}
+          {/* Submit Button */}
           <div className="sticky bottom-0 pt-2 pb-4 -mx-4 px-4 bg-gradient-to-t from-background via-background to-transparent">
             <Button 
               type="submit" 
