@@ -47,7 +47,7 @@ export default function CreateStudent() {
     } catch (err) {
       if (err instanceof z.ZodError) {
         const newErrors: Record<string, string> = {};
-        err.errors.forEach((e) => { if (e.path[0]) newErrors[e.path[0].toString()] = e.message; });
+        err.issues.forEach((issue) => { if (issue.path[0]) newErrors[issue.path[0].toString()] = issue.message; });
         setErrors(newErrors);
         return;
       }
