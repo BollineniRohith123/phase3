@@ -40,6 +40,20 @@ interface TimeLeft {
   seconds: number;
 }
 
+// Group discount options for Tier 1
+interface GroupOption {
+  id: string;
+  label: string;
+  totalTickets: number;
+  freeTickets: number;
+  paidTickets: number;
+}
+
+const GROUP_OPTIONS: GroupOption[] = [
+  { id: 'group5', label: '5 Tickets (1 FREE!)', totalTickets: 5, freeTickets: 1, paidTickets: 4 },
+  { id: 'group10', label: '10 Tickets (2 FREE!)', totalTickets: 10, freeTickets: 2, paidTickets: 8 },
+];
+
 const schema = z.object({
   buyer_name: z.string().min(1, 'Your name is required'),
   buyer_mobile: z.string().regex(/^\d{10}$/, 'Enter valid 10-digit mobile'),
@@ -104,12 +118,42 @@ export default function ReferralForm() {
   
   const [form, setForm] = useState({ buyer_name: '', buyer_mobile: '', utr_last4: '' });
   const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [selectedGroupOption, setSelectedGroupOption] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
-  const totalAmount = tiers.reduce((sum, tier) => sum + (quantities[tier.id] || 0) * tier.price, 0);
-  const totalTickets = Object.values(quantities).reduce((a, b) => a + b, 0);
+  // Filter out Tier 4 (₹1899)
+  const filteredTiers = tiers.filter(tier => tier.price !== 1899);
+  
+  // Get Tier 1 (cheapest tier) for group discounts
+  const tier1 = filteredTiers.length > 0 ? filteredTiers[0] : null;
+  
+  // Calculate total amount with group discount
+  const calculateTotal = () => {
+    let amount = 0;
+    let tickets = 0;
+    
+    // Add group option if selected
+    if (selectedGroupOption && tier1) {
+      const option = GROUP_OPTIONS.find(o => o.id === selectedGroupOption);
+      if (option) {
+        amount += option.paidTickets * tier1.price;
+        tickets += option.totalTickets;
+      }
+    }
+    
+    // Add regular tier quantities
+    filteredTiers.forEach(tier => {
+      const qty = quantities[tier.id] || 0;
+      amount += qty * tier.price;
+      tickets += qty;
+    });
+    
+    return { amount, tickets };
+  };
+  
+  const { amount: totalAmount, tickets: totalTickets } = calculateTotal();
 
   // Update countdown every second
   useEffect(() => {
@@ -186,6 +230,7 @@ export default function ReferralForm() {
           .from('ticket_tiers')
           .select('*')
           .gt('remaining_qty', 0)
+          .neq('price', 1899) // Exclude Tier 4
           .order('price', { ascending: true });
 
         if (tiersError) {
@@ -267,9 +312,27 @@ export default function ReferralForm() {
         return;
       }
 
-      const ticketsData: TicketItem[] = tiers
+      const ticketsData: TicketItem[] = [];
+      
+      // Add group option tickets if selected
+      if (selectedGroupOption && tier1) {
+        const option = GROUP_OPTIONS.find(o => o.id === selectedGroupOption);
+        if (option) {
+          ticketsData.push({
+            tier_id: tier1.id,
+            tier_name: `${tier1.name} - ${option.label}`,
+            price: tier1.price,
+            qty: option.totalTickets,
+          });
+        }
+      }
+      
+      // Add regular tier quantities
+      filteredTiers
         .filter(t => quantities[t.id] > 0)
-        .map(t => ({ tier_id: t.id, tier_name: t.name, price: t.price, qty: quantities[t.id] }));
+        .forEach(t => {
+          ticketsData.push({ tier_id: t.id, tier_name: t.name, price: t.price, qty: quantities[t.id] });
+        });
 
       const { data, error: invokeError } = await supabase.functions.invoke('create-public-sale', {
         body: {
@@ -489,11 +552,77 @@ export default function ReferralForm() {
               </CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4">
-              {tiers.length === 0 ? (
+              {filteredTiers.length === 0 ? (
                 <p className="text-center text-muted-foreground py-6">No tickets available</p>
               ) : (
                 <div className="space-y-3">
-                  {tiers.map(tier => {
+                  {/* Group Discount Options for Tier 1 */}
+                  {tier1 && tier1.remaining_qty >= 5 && (
+                    <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-2 border-green-500/30 rounded-xl p-3 mb-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-lg">🎉</span>
+                        <p className="font-bold text-sm text-green-700 dark:text-green-400">
+                          Group Discount on {tier1.name}!
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        {GROUP_OPTIONS.map(option => {
+                          if (tier1.remaining_qty < option.totalTickets) return null;
+                          const isSelected = selectedGroupOption === option.id;
+                          const discountedPrice = option.paidTickets * tier1.price;
+                          const originalPrice = option.totalTickets * tier1.price;
+                          const savings = originalPrice - discountedPrice;
+                          
+                          return (
+                            <div
+                              key={option.id}
+                              onClick={() => setSelectedGroupOption(isSelected ? null : option.id)}
+                              className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                                isSelected 
+                                  ? 'border-green-500 bg-green-500/10' 
+                                  : 'border-border hover:border-green-500/50'
+                              }`}
+                            >
+                              <div className="flex-1">
+                                <p className="font-semibold text-sm">{option.label}</p>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                                    ₹{discountedPrice.toLocaleString()}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground line-through">
+                                    ₹{originalPrice.toLocaleString()}
+                                  </p>
+                                  <span className="bg-green-500 text-white text-xs font-bold px-1.5 py-0.5 rounded">
+                                    SAVE ₹{savings.toLocaleString()}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                                isSelected ? 'border-green-500 bg-green-500' : 'border-muted-foreground/30'
+                              }`}>
+                                {isSelected && <Check className="h-4 w-4 text-white" />}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Divider if group options shown */}
+                  {tier1 && tier1.remaining_qty >= 5 && (
+                    <div className="relative py-2">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t" />
+                      </div>
+                      <div className="relative flex justify-center text-xs">
+                        <span className="bg-card px-2 text-muted-foreground">Or select individual tickets</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Regular Tier Selection */}
+                  {filteredTiers.map(tier => {
                     const qty = quantities[tier.id] || 0;
                     return (
                       <div 

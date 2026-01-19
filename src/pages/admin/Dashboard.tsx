@@ -157,7 +157,7 @@ export default function AdminDashboard() {
               <CardHeader><CardTitle>Ticket Inventory</CardTitle></CardHeader>
               <CardContent>
                 <div className="grid gap-4">
-                  {tiers.map(tier => (
+                  {tiers.filter(tier => tier.price !== 1899).map(tier => (
                     <div key={tier.id} className="flex items-center gap-4 p-4 border rounded-lg">
                       <div className="flex-1"><span className="font-medium">{tier.name}</span></div>
                       <div className="flex items-center gap-2">
