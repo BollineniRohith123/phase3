@@ -173,9 +173,9 @@ Deno.serve(async (req) => {
           console.error('Update existing user error:', updateUserError)
         }
 
-        const { error: repairedProfileError } = await supabaseAdmin.from('profiles').insert({
+      const { error: repairedProfileError } = await supabaseAdmin.from('profiles').insert({
           id: existingUserId,
-          student_id,
+          partner_id: student_id,
           name,
           mobile,
           role: 'student',
@@ -230,7 +230,7 @@ Deno.serve(async (req) => {
 
     const { error: profileInsertError } = await supabaseAdmin.from('profiles').insert({
       id: newUserId,
-      student_id,
+      partner_id: student_id,
       name,
       mobile,
       role: 'student',
