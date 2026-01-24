@@ -15,7 +15,7 @@ import paymentQR from '@/assets/payment-qr.png';
 const schema = z.object({
   buyer_name: z.string().min(1, 'Buyer name is required'),
   buyer_mobile: z.string().regex(/^\d{10}$/, 'Enter valid 10-digit mobile'),
-  utr_last4: z.string().regex(/^\d{4}$/, 'Enter last 4 digits of UTR'),
+  transaction_id_last4: z.string().regex(/^\d{4}$/, 'Enter last 4 digits of Transaction ID'),
 });
 
 // Group discount options for Tier 1
@@ -38,7 +38,7 @@ export default function NewSale() {
   const createSale = useCreateSale();
   const { uploadFile, uploading } = useFileUpload();
 
-  const [form, setForm] = useState({ buyer_name: '', buyer_mobile: '', utr_last4: '' });
+  const [form, setForm] = useState({ buyer_name: '', buyer_mobile: '', transaction_id_last4: '' });
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [selectedGroupOption, setSelectedGroupOption] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -129,7 +129,7 @@ export default function NewSale() {
     await createSale.mutateAsync({
       buyer_name: form.buyer_name,
       buyer_mobile: form.buyer_mobile,
-      utr_last4: form.utr_last4,
+      transaction_id_last4: form.transaction_id_last4,
       amount: totalAmount,
       screenshot_url: screenshotUrl,
       tickets_data: ticketsData,
@@ -258,9 +258,9 @@ export default function NewSale() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label>UTR Last 4 Digits *</Label>
-                <Input value={form.utr_last4} onChange={e => setForm({...form, utr_last4: e.target.value})} maxLength={4} placeholder="1234" />
-                {errors.utr_last4 && <p className="text-sm text-destructive mt-1">{errors.utr_last4}</p>}
+                <Label>Transaction ID Last 4 Digits *</Label>
+                <Input value={form.transaction_id_last4} onChange={e => setForm({...form, transaction_id_last4: e.target.value})} maxLength={4} placeholder="1234" />
+                {errors.transaction_id_last4 && <p className="text-sm text-destructive mt-1">{errors.transaction_id_last4}</p>}
               </div>
               <div>
                 <Label>Payment Screenshot *</Label>

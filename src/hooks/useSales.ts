@@ -13,12 +13,12 @@ export interface TicketItem {
 
 export interface Sale {
   id: string;
-  student_id: string | null;
+  partner_id: string | null;
   status: 'pending' | 'approved' | 'rejected';
   buyer_name: string;
   buyer_mobile: string;
   amount: number;
-  utr_last4: string;
+  transaction_id_last4: string;
   screenshot_url: string | null;
   tickets_data: TicketItem[];
   rejection_reason: string | null;
@@ -48,7 +48,7 @@ export const useStudentSales = () => {
       const { data, error } = await supabase
         .from('sales')
         .select('*')
-        .eq('student_id', user.id)
+        .eq('partner_id', user.id)
         .order('submitted_at', { ascending: false });
 
       if (error) throw error;
@@ -88,7 +88,7 @@ export const useCreateSale = () => {
       buyer_name: string;
       buyer_mobile: string;
       amount: number;
-      utr_last4: string;
+      transaction_id_last4: string;
       screenshot_url: string | null;
       tickets_data: TicketItem[];
     }) => {
@@ -100,9 +100,9 @@ export const useCreateSale = () => {
           buyer_name: saleData.buyer_name,
           buyer_mobile: saleData.buyer_mobile,
           amount: saleData.amount,
-          utr_last4: saleData.utr_last4,
+          transaction_id_last4: saleData.transaction_id_last4,
           screenshot_url: saleData.screenshot_url,
-          student_id: user.id,
+          partner_id: user.id,
           tickets_data: saleData.tickets_data as unknown as Json,
         })
         .select()

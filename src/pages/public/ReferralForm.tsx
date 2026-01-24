@@ -57,7 +57,7 @@ const GROUP_OPTIONS: GroupOption[] = [
 const schema = z.object({
   buyer_name: z.string().min(1, 'Your name is required'),
   buyer_mobile: z.string().regex(/^\d{10}$/, 'Enter valid 10-digit mobile'),
-  utr_last4: z.string().regex(/^\d{4}$/, 'Enter last 4 digits of UTR'),
+  transaction_id_last4: z.string().regex(/^\d{4}$/, 'Enter last 4 digits of Transaction ID'),
 });
 
 // Generate consistent "tickets booked today" count
@@ -104,7 +104,7 @@ const getTimeLeft = (): TimeLeft => {
 };
 
 export default function ReferralForm() {
-  const { studentCode } = useParams<{ studentCode: string }>();
+  const { studentCode: partnerCode } = useParams<{ studentCode: string }>();
   const { toast } = useToast();
   
   const [studentName, setStudentName] = useState<string | null>(null);
@@ -116,7 +116,7 @@ export default function ReferralForm() {
   const [todayCount, setTodayCount] = useState(getTodayTicketCount());
   const [timeLeft, setTimeLeft] = useState<TimeLeft>(getTimeLeft());
   
-  const [form, setForm] = useState({ buyer_name: '', buyer_mobile: '', utr_last4: '' });
+  const [form, setForm] = useState({ buyer_name: '', buyer_mobile: '', transaction_id_last4: '' });
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [selectedGroupOption, setSelectedGroupOption] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -198,7 +198,7 @@ export default function ReferralForm() {
 
   useEffect(() => {
     async function fetchData() {
-      if (!studentCode) {
+      if (!partnerCode) {
         setError('Invalid referral link');
         setLoading(false);
         return;
@@ -208,7 +208,7 @@ export default function ReferralForm() {
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('name, is_active')
-          .eq('student_id', studentCode.toUpperCase())
+          .eq('partner_id', partnerCode.toUpperCase())
           .eq('role', 'student')
           .single();
 
@@ -247,7 +247,7 @@ export default function ReferralForm() {
     }
 
     fetchData();
-  }, [studentCode]);
+  }, [partnerCode]);
 
   const uploadFile = async (file: File): Promise<string | null> => {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
@@ -336,10 +336,10 @@ export default function ReferralForm() {
 
       const { data, error: invokeError } = await supabase.functions.invoke('create-public-sale', {
         body: {
-          student_code: studentCode?.toUpperCase(),
+          student_code: partnerCode?.toUpperCase(),
           buyer_name: form.buyer_name.trim(),
           buyer_mobile: form.buyer_mobile,
-          utr_last4: form.utr_last4,
+          transaction_id_last4: form.transaction_id_last4,
           screenshot_url: screenshotUrl,
           tickets_data: ticketsData,
           amount: totalAmount,
@@ -747,17 +747,17 @@ export default function ReferralForm() {
               </div>
 
               <div>
-                <Label className="text-sm">UTR Last 4 Digits *</Label>
+                <Label className="text-sm">Transaction ID Last 4 Digits *</Label>
                 <Input 
                   type="tel"
                   inputMode="numeric"
-                  value={form.utr_last4} 
-                  onChange={e => setForm({...form, utr_last4: e.target.value.replace(/\D/g, '')})} 
+                  value={form.transaction_id_last4} 
+                  onChange={e => setForm({...form, transaction_id_last4: e.target.value.replace(/\D/g, '')})} 
                   maxLength={4} 
                   placeholder="e.g. 1234"
                   className="mt-1.5 h-11 text-base font-mono tracking-widest"
                 />
-                {errors.utr_last4 && <p className="text-xs text-destructive mt-1">{errors.utr_last4}</p>}
+                {errors.transaction_id_last4 && <p className="text-xs text-destructive mt-1">{errors.transaction_id_last4}</p>}
               </div>
 
               <div>

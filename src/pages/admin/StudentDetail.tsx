@@ -43,14 +43,14 @@ export default function StudentDetail() {
       const { data, error } = await supabase
         .from('sales')
         .select('*')
-        .eq('student_id', studentId)
+        .eq('partner_id', studentId)
         .order('submitted_at', { ascending: false });
       if (error) throw error;
       return data.map((item) => ({
         ...item,
         tickets_data: (item.tickets_data as unknown as TicketItem[]) || [],
         status: item.status as 'pending' | 'approved' | 'rejected',
-      })) as Sale[];
+      })) as unknown as Sale[];
     },
     enabled: !!studentId,
   });
@@ -132,7 +132,7 @@ export default function StudentDetail() {
           </Button>
           <div className="flex-1">
             <h1 className="text-xl font-bold">{student.name}</h1>
-            <p className="text-sm text-muted-foreground">Student ID: {student.student_id}</p>
+            <p className="text-sm text-muted-foreground">Partner ID: {student.partner_id}</p>
           </div>
           <Button variant="outline" onClick={openResetDialog}>
             <Key className="mr-2 h-4 w-4" /> Reset Password
@@ -145,7 +145,7 @@ export default function StudentDetail() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" /> Student Information
+              <User className="h-5 w-5" /> Partner Information
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -245,7 +245,7 @@ export default function StudentDetail() {
                       <th className="px-4 py-3 text-left">Buyer</th>
                       <th className="px-4 py-3 text-left">Tickets</th>
                       <th className="px-4 py-3 text-left">Amount</th>
-                      <th className="px-4 py-3 text-left">UTR</th>
+                      <th className="px-4 py-3 text-left">Txn ID</th>
                       <th className="px-4 py-3 text-left">Status</th>
                       <th className="px-4 py-3 text-left">Date</th>
                     </tr>
@@ -268,7 +268,7 @@ export default function StudentDetail() {
                           </div>
                         </td>
                         <td className="px-4 py-3 font-medium">₹{sale.amount.toLocaleString()}</td>
-                        <td className="px-4 py-3">...{sale.utr_last4}</td>
+                        <td className="px-4 py-3">...{sale.transaction_id_last4}</td>
                         <td className="px-4 py-3">
                           <Badge
                             variant={
@@ -301,7 +301,7 @@ export default function StudentDetail() {
           <DialogHeader>
             <DialogTitle>Reset Password for {student.name}</DialogTitle>
             <DialogDescription>
-              Set a new password for student ID: {student.student_id}
+              Set a new password for partner ID: {student.partner_id}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -322,7 +322,7 @@ export default function StudentDetail() {
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Make sure to copy and share this password with the student securely.
+                Make sure to copy and share this password with the partner securely.
               </p>
             </div>
           </div>

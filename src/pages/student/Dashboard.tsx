@@ -33,7 +33,7 @@ export default function StudentDashboard() {
         <div className="container flex items-center justify-between py-4">
           <div>
             <h1 className="text-xl font-bold">Welcome, {profile?.name}</h1>
-            <p className="text-sm text-muted-foreground">ID: {profile?.student_id}</p>
+            <p className="text-sm text-muted-foreground">ID: {profile?.partner_id}</p>
           </div>
           <Button variant="outline" size="sm" onClick={() => signOut()}>
             <LogOut className="mr-2 h-4 w-4" /> Logout
