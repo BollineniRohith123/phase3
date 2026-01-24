@@ -4,7 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 
 export interface Profile {
   id: string;
-  student_id: string | null;
+  partner_id: string | null;
   name: string;
   mobile: string | null;
   role: 'admin' | 'student';
@@ -34,18 +34,18 @@ export const useCreateStudent = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (studentData: {
-      student_id: string;
+    mutationFn: async (partnerData: {
+      partner_id: string;
       name: string;
       mobile: string;
       password: string;
     }) => {
       const { data, error } = await supabase.functions.invoke('create-student', {
         body: {
-          student_id: studentData.student_id,
-          name: studentData.name,
-          mobile: studentData.mobile,
-          password: studentData.password,
+          student_id: partnerData.partner_id,
+          name: partnerData.name,
+          mobile: partnerData.mobile,
+          password: partnerData.password,
         },
       });
 
@@ -82,7 +82,7 @@ export const useCreateStudent = () => {
         throw new Error(data?.error ?? 'Failed to create student');
       }
 
-      return { user_id: data.user_id as string, password: studentData.password };
+      return { user_id: data.user_id as string, password: partnerData.password };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] });

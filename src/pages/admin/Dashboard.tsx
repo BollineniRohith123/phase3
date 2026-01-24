@@ -55,7 +55,7 @@ export default function AdminDashboard() {
         <div className="grid gap-4 md:grid-cols-4 mb-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Students</CardTitle>
+              <CardTitle className="text-sm font-medium">Partners</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent><div className="text-2xl font-bold">{students.length}</div></CardContent>
@@ -87,7 +87,7 @@ export default function AdminDashboard() {
           <TabsList>
             <TabsTrigger value="sales">Sales</TabsTrigger>
             <TabsTrigger value="inventory">Inventory</TabsTrigger>
-            <TabsTrigger value="students">Students</TabsTrigger>
+            <TabsTrigger value="students">Partners</TabsTrigger>
           </TabsList>
 
           <TabsContent value="sales">
@@ -110,7 +110,7 @@ export default function AdminDashboard() {
                         <th className="px-4 py-3 text-left">ID</th>
                         <th className="px-4 py-3 text-left">Buyer</th>
                         <th className="px-4 py-3 text-left">Amount</th>
-                        <th className="px-4 py-3 text-left">UTR</th>
+                        <th className="px-4 py-3 text-left">Txn ID</th>
                         <th className="px-4 py-3 text-left">Status</th>
                         <th className="px-4 py-3 text-left">Actions</th>
                       </tr>
@@ -124,7 +124,7 @@ export default function AdminDashboard() {
                             <div className="text-xs text-muted-foreground">{sale.buyer_mobile}</div>
                           </td>
                           <td className="px-4 py-3">₹{sale.amount.toLocaleString()}</td>
-                          <td className="px-4 py-3">...{sale.utr_last4}</td>
+                          <td className="px-4 py-3">...{sale.transaction_id_last4}</td>
                           <td className="px-4 py-3">
                             <Badge variant={sale.status === 'approved' ? 'default' : sale.status === 'rejected' ? 'destructive' : 'secondary'}>
                               {sale.status}
@@ -180,9 +180,9 @@ export default function AdminDashboard() {
           <TabsContent value="students">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Students ({students.length})</CardTitle>
+                <CardTitle>Partners ({students.length})</CardTitle>
                 <Button onClick={() => navigate('/admin/create-student')}>
-                  <Plus className="mr-2 h-4 w-4" /> Add Student
+                  <Plus className="mr-2 h-4 w-4" /> Add Partner
                 </Button>
               </CardHeader>
               <CardContent>
@@ -201,7 +201,7 @@ export default function AdminDashboard() {
                     <tbody>
                       {students.map(student => (
                         <tr key={student.id} className="border-b hover:bg-muted/50">
-                          <td className="px-4 py-3 font-mono">{student.student_id}</td>
+                          <td className="px-4 py-3 font-mono">{student.partner_id}</td>
                           <td className="px-4 py-3">{student.name}</td>
                           <td className="px-4 py-3">{student.mobile}</td>
                           <td className="px-4 py-3">

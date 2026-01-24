@@ -13,7 +13,7 @@ export default function MyReferralLink() {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
 
-  const referralLink = `${window.location.origin}/ref/${profile?.student_id}`;
+  const referralLink = `${window.location.origin}/ref/${profile?.partner_id}`;
 
   const copyToClipboard = async () => {
     try {

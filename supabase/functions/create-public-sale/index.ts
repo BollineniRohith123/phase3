@@ -16,7 +16,7 @@ interface PublicSaleRequest {
   student_code: string;
   buyer_name: string;
   buyer_mobile: string;
-  utr_last4: string;
+  transaction_id_last4: string;
   screenshot_url: string;
   tickets_data: TicketItem[];
   amount: number;
@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
     console.log('Received public sale request for student:', body.student_code);
 
     // Validate required fields
-    if (!body.student_code || !body.buyer_name || !body.buyer_mobile || !body.utr_last4 || !body.tickets_data || !body.amount) {
+    if (!body.student_code || !body.buyer_name || !body.buyer_mobile || !body.transaction_id_last4 || !body.tickets_data || !body.amount) {
       console.error('Missing required fields:', body);
       return new Response(
         JSON.stringify({ error: 'Missing required fields' }),
@@ -55,50 +55,50 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Validate UTR last 4 digits
-    if (!/^\d{4}$/.test(body.utr_last4)) {
+    // Validate Transaction ID last 4 digits
+    if (!/^\d{4}$/.test(body.transaction_id_last4)) {
       return new Response(
-        JSON.stringify({ error: 'Invalid UTR. Enter last 4 digits.' }),
+        JSON.stringify({ error: 'Invalid Transaction ID. Enter last 4 digits.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Find the student by their student_id (e.g., "STU001")
-    const { data: studentProfile, error: profileError } = await supabase
+    // Find the partner by their partner_id (e.g., "PTR001")
+    const { data: partnerProfile, error: profileError } = await supabase
       .from('profiles')
-      .select('id, name, student_id, is_active')
-      .eq('student_id', body.student_code.toUpperCase())
+      .select('id, name, partner_id, is_active')
+      .eq('partner_id', body.student_code.toUpperCase())
       .eq('role', 'student')
       .single();
 
-    if (profileError || !studentProfile) {
-      console.error('Student not found:', body.student_code, profileError);
+    if (profileError || !partnerProfile) {
+      console.error('Partner not found:', body.student_code, profileError);
       return new Response(
-        JSON.stringify({ error: 'Invalid referral link. Student not found.' }),
+        JSON.stringify({ error: 'Invalid referral link. Partner not found.' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    if (!studentProfile.is_active) {
-      console.error('Student is inactive:', body.student_code);
+    if (!partnerProfile.is_active) {
+      console.error('Partner is inactive:', body.student_code);
       return new Response(
         JSON.stringify({ error: 'This referral link is no longer active.' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Found student:', studentProfile.name, 'UUID:', studentProfile.id);
+    console.log('Found partner:', partnerProfile.name, 'UUID:', partnerProfile.id);
 
-    // Insert the sale with the student's UUID
+    // Insert the sale with the partner's UUID
     const { data: sale, error: insertError } = await supabase
       .from('sales')
       .insert({
         buyer_name: body.buyer_name.trim(),
         buyer_mobile: body.buyer_mobile,
-        utr_last4: body.utr_last4,
+        transaction_id_last4: body.transaction_id_last4,
         amount: body.amount,
         screenshot_url: body.screenshot_url,
-        student_id: studentProfile.id,
+        partner_id: partnerProfile.id,
         tickets_data: body.tickets_data,
         status: 'pending',
       })
@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         sale_id: sale.id,
-        message: 'Your ticket purchase has been submitted! The student will be notified.'
+        message: 'Your ticket purchase has been submitted! The partner will be notified.'
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

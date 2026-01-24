@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface Profile {
   id: string;
-  student_id: string | null;
+  partner_id: string | null;
   name: string;
   mobile: string | null;
   role: 'admin' | 'student';

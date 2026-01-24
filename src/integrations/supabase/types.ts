@@ -51,8 +51,8 @@ export type Database = {
           is_active: boolean
           mobile: string | null
           name: string
+          partner_id: string | null
           role: Database["public"]["Enums"]["app_role"]
-          student_id: string | null
           updated_at: string
         }
         Insert: {
@@ -61,8 +61,8 @@ export type Database = {
           is_active?: boolean
           mobile?: string | null
           name: string
+          partner_id?: string | null
           role?: Database["public"]["Enums"]["app_role"]
-          student_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -71,8 +71,8 @@ export type Database = {
           is_active?: boolean
           mobile?: string | null
           name?: string
+          partner_id?: string | null
           role?: Database["public"]["Enums"]["app_role"]
-          student_id?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -85,14 +85,14 @@ export type Database = {
           buyer_name: string
           created_at: string
           id: string
+          partner_id: string | null
           rejection_reason: string | null
           screenshot_url: string | null
           status: string
-          student_id: string | null
           submitted_at: string
           tickets_data: Json
+          transaction_id_last4: string
           updated_at: string
-          utr_last4: string
         }
         Insert: {
           amount: number
@@ -101,14 +101,14 @@ export type Database = {
           buyer_name: string
           created_at?: string
           id?: string
+          partner_id?: string | null
           rejection_reason?: string | null
           screenshot_url?: string | null
           status?: string
-          student_id?: string | null
           submitted_at?: string
           tickets_data?: Json
+          transaction_id_last4: string
           updated_at?: string
-          utr_last4: string
         }
         Update: {
           amount?: number
@@ -117,14 +117,14 @@ export type Database = {
           buyer_name?: string
           created_at?: string
           id?: string
+          partner_id?: string | null
           rejection_reason?: string | null
           screenshot_url?: string | null
           status?: string
-          student_id?: string | null
           submitted_at?: string
           tickets_data?: Json
+          transaction_id_last4?: string
           updated_at?: string
-          utr_last4?: string
         }
         Relationships: []
       }

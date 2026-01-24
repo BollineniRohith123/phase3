@@ -10,7 +10,7 @@ import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 
 const schema = z.object({
-  student_id: z.string().min(1, 'Student ID is required').regex(/^[A-Z0-9]+$/, 'Use uppercase letters and numbers only'),
+  partner_id: z.string().min(1, 'Partner ID is required').regex(/^[A-Z0-9]+$/, 'Use uppercase letters and numbers only'),
   name: z.string().min(1, 'Name is required'),
   mobile: z.string().regex(/^\d{10}$/, 'Enter valid 10-digit mobile'),
 });
@@ -29,7 +29,7 @@ export default function CreateStudent() {
   const createStudent = useCreateStudent();
   const { toast } = useToast();
 
-  const [form, setForm] = useState({ student_id: '', name: '', mobile: '' });
+  const [form, setForm] = useState({ partner_id: '', name: '', mobile: '' });
   const [passwordMode, setPasswordMode] = useState<'auto' | 'custom'>('auto');
   const [password, setPassword] = useState<string>(generatePassword());
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -62,13 +62,13 @@ export default function CreateStudent() {
 
     try {
       await createStudent.mutateAsync({
-        student_id: form.student_id,
+        partner_id: form.partner_id,
         name: form.name,
         mobile: form.mobile,
         password: passwordToUse,
       });
 
-      setCreatedCredentials({ id: form.student_id, password: passwordToUse });
+      setCreatedCredentials({ id: form.partner_id, password: passwordToUse });
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Failed to create student');
       // Mutation already shows a toast; we also render the message inline here.
@@ -77,7 +77,7 @@ export default function CreateStudent() {
 
   const copyCredentials = () => {
     if (createdCredentials) {
-      navigator.clipboard.writeText(`Student ID: ${createdCredentials.id}\nPassword: ${createdCredentials.password}`);
+      navigator.clipboard.writeText(`Partner ID: ${createdCredentials.id}\nPassword: ${createdCredentials.password}`);
       setCopied(true);
       toast({ title: 'Credentials copied to clipboard!' });
       setTimeout(() => setCopied(false), 2000);
@@ -85,7 +85,7 @@ export default function CreateStudent() {
   };
 
   const handleCreateAnother = () => {
-    setForm({ student_id: '', name: '', mobile: '' });
+    setForm({ partner_id: '', name: '', mobile: '' });
     setPasswordMode('auto');
     setPassword(generatePassword());
     setCreatedCredentials(null);
@@ -99,7 +99,7 @@ export default function CreateStudent() {
             <Button variant="ghost" size="icon" onClick={() => navigate('/admin')}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <h1 className="text-xl font-bold">Student Created!</h1>
+            <h1 className="text-xl font-bold">Partner Created!</h1>
           </div>
         </header>
 
@@ -111,7 +111,7 @@ export default function CreateStudent() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="p-4 bg-muted rounded-lg font-mono text-sm space-y-2">
-                <div><span className="text-muted-foreground">Student ID:</span> <strong>{createdCredentials.id}</strong></div>
+                <div><span className="text-muted-foreground">Partner ID:</span> <strong>{createdCredentials.id}</strong></div>
                 <div><span className="text-muted-foreground">Password:</span> <strong>{createdCredentials.password}</strong></div>
               </div>
               
@@ -138,7 +138,7 @@ export default function CreateStudent() {
           <Button variant="ghost" size="icon" onClick={() => navigate('/admin')}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-xl font-bold">Create New Student</h1>
+          <h1 className="text-xl font-bold">Create New Partner</h1>
         </div>
       </header>
 
@@ -146,18 +146,18 @@ export default function CreateStudent() {
         <form onSubmit={handleSubmit}>
           <Card>
             <CardHeader>
-              <CardTitle>Student Details</CardTitle>
-              <CardDescription>Create a student login. The password is set now and shown once.</CardDescription>
+              <CardTitle>Partner Details</CardTitle>
+              <CardDescription>Create a partner login. The password is set now and shown once.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label>Student ID *</Label>
+                <Label>Partner ID *</Label>
                 <Input 
-                  value={form.student_id} 
-                  onChange={e => setForm({...form, student_id: e.target.value.toUpperCase()})} 
-                  placeholder="e.g., STU001"
+                  value={form.partner_id} 
+                  onChange={e => setForm({...form, partner_id: e.target.value.toUpperCase()})} 
+                  placeholder="e.g., PTR001"
                 />
-                {errors.student_id && <p className="text-sm text-destructive mt-1">{errors.student_id}</p>}
+                {errors.partner_id && <p className="text-sm text-destructive mt-1">{errors.partner_id}</p>}
               </div>
               <div>
                 <Label>Full Name *</Label>
@@ -235,7 +235,7 @@ export default function CreateStudent() {
 
               <Button type="submit" className="w-full" disabled={createStudent.isPending}>
                 {createStudent.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Create Student
+                Create Partner
               </Button>
 
               {submitError && (
