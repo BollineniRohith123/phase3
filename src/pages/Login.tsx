@@ -133,22 +133,22 @@ export default function Login() {
             <Music2 className="h-6 w-6 text-primary-foreground" />
           </div>
           <CardTitle className="text-2xl">Ram Miriyala Concert</CardTitle>
-          <CardDescription>Influencer Portal - Feb 7, 2026</CardDescription>
+          <CardDescription>Partner Portal - Feb 7, 2026</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="student" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="student">Student</TabsTrigger>
+              <TabsTrigger value="student">Partner</TabsTrigger>
               <TabsTrigger value="admin">Admin</TabsTrigger>
             </TabsList>
             
             <TabsContent value="student">
               <form onSubmit={handleStudentLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="studentId">Student ID</Label>
+                  <Label htmlFor="studentId">Partner ID</Label>
                   <Input
                     id="studentId"
-                    placeholder="e.g., STU001"
+                    placeholder="e.g., PTR001"
                     value={studentId}
                     onChange={(e) => setStudentId(e.target.value.toUpperCase())}
                     disabled={loading}
@@ -173,7 +173,7 @@ export default function Login() {
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Login as Student
+                  Login as Partner
                 </Button>
               </form>
             </TabsContent>
