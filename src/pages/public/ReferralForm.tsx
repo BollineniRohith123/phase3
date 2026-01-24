@@ -392,10 +392,23 @@ export default function ReferralForm() {
             <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
             <h1 className="text-2xl font-bold mb-3">Booking Submitted!</h1>
             <p className="text-muted-foreground mb-4">
-              Your ticket request has been submitted successfully. {studentName} will verify your payment and confirm.
+              Your ticket request has been submitted successfully.
             </p>
+            <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 mb-4">
+              <p className="text-sm font-medium text-green-700 dark:text-green-400">
+                ✅ Our team will validate and get in touch with you on WhatsApp within the next 2 hours.
+              </p>
+            </div>
             <p className="text-sm text-muted-foreground mb-6">
-              You'll receive confirmation soon.
+              For any queries, please contact:<br />
+              <a 
+                href="https://wa.me/919000125959" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="font-semibold text-primary hover:underline"
+              >
+                +91 90001 25959
+              </a>
             </p>
             <a 
               href={INSTAGRAM_REEL_URL}
